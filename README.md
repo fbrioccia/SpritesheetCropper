@@ -1,6 +1,6 @@
 # SpritesheetCropper
-## Overciew
-This tool has been developed to simplify the proces ofmetadata extraction from a single Spritesheet.
+## Overview
+This tool has been developed to simplify the proces of metadata extraction from a single Spritesheet.
 
 ### Behaviour
 Once the spritesheet (.jpg .png) is loaded, the user can crop a single sprite on the SP, and select its frame value,
