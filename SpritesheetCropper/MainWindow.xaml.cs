@@ -216,6 +216,7 @@ namespace SpritesheetCropper
 			Canvas.SetTop(rect, startPoint.Y);
 
 			MainCanvas.Children.Add(rect);
+			
 
 		}
 		private void PopupFrameMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
@@ -278,7 +279,6 @@ namespace SpritesheetCropper
 			if (IsSpriteDrawnable)
 			{
 				IsInFrameSelection = false;
-				CanvasHolderScrollBar.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
 
 				Sprites.Add(CurrentSprite);
 				SpriteGridView.ItemsSource = null;
@@ -287,6 +287,7 @@ namespace SpritesheetCropper
 				SpriteGridView.UpdateLayout();
 				IsSpriteDrawnable = false;
 				RemoveAllTrasparentDots();
+				rect = new Rectangle();
 				return;
 			}
 
@@ -310,6 +311,12 @@ namespace SpritesheetCropper
 			var pos = new Point(Math.Round(e.GetPosition(MainCanvas).X), Math.Round(e.GetPosition(MainCanvas).Y));
 			bottomCoordinates.Text = "X: " + pos.X + "; Y: " + pos.Y;
 
+			if (e.LeftButton == MouseButtonState.Released || rect == null)
+				return;
+
+			if (IsInFrameSelection)
+				return;
+
 			if (IsInPivotSelection)
 			{
 				if (RedPointPosition != null)
@@ -325,9 +332,6 @@ namespace SpritesheetCropper
 				MainCanvas.Children.Add(RedPointPosition);
 				return;
 			}
-
-			if (e.LeftButton == MouseButtonState.Released || rect == null)
-				return;
 
 			var x = Math.Min(pos.X, startPoint.X);
 			var y = Math.Min(pos.Y, startPoint.Y);
