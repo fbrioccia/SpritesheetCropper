@@ -5,7 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SpritesheetCropper"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="350" Width="525"
+		MouseUp="Window_MouseUp">
 	<Window.Resources>
 		<Style x:Key="IconStyle" TargetType="Image">
 			<Setter Property="Height" Value="20px"></Setter>
@@ -30,23 +31,23 @@
 				<TextBlock Name="bottomCoordinates" Text="X: 0; Y: 0" />
 			</Border>
 			<Border DockPanel.Dock="Right" Width="360" Visibility="Hidden" Name="DataGridHolder">
-				<DataGrid Name="SpriteGridView"  CanUserAddRows="True" AutoGenerateColumns="False" ItemsSource="{Binding SimpleCollection}">
+				<DataGrid x:Name="SpriteGridView"  CanUserAddRows="True" AutoGenerateColumns="False" ItemsSource="{Binding SimpleCollection}">
 					<DataGrid.Columns>
 						<DataGridTemplateColumn Header="Select">
 							<DataGridTemplateColumn.CellTemplate>
 								<DataTemplate>
-									<Button Content="Delete" CommandParameter="{Binding Path=Id}" Click="DeleteSprite_MouseClick"/>
+									<Button Content="Delete" CommandParameter="{Binding Id}" Click="DeleteSprite_MouseClick"/>
 								</DataTemplate>
 							</DataGridTemplateColumn.CellTemplate>
 						</DataGridTemplateColumn>
-						<DataGridTextColumn Width="40" Header="Id" Binding="{Binding Id}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40" Header="X" Binding="{Binding X}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40" Header="Y" Binding="{Binding Y}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40" Header="Width" Binding="{Binding Width}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40" Header="Height" Binding="{Binding Height}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40" Header="Pivot x" Binding="{Binding xPivot}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40"  Header="Pivot y" Binding="{Binding yPivot}"></DataGridTextColumn>
-						<DataGridTextColumn Width="40" Header="Frames" Binding="{Binding Frames}"></DataGridTextColumn>
+						<DataGridTextColumn Width="40" Header="Id" Binding="{Binding Id}"/>
+						<DataGridTextColumn Width="40" Header="X" Binding="{Binding X}"/>
+						<DataGridTextColumn Width="40" Header="Y" Binding="{Binding Y}"/>
+						<DataGridTextColumn Width="40" Header="Width" Binding="{Binding Width}"/>
+						<DataGridTextColumn Width="40" Header="Height" Binding="{Binding Height}"/>
+						<DataGridTextColumn Width="40" Header="Pivot x" Binding="{Binding xPivot}"/>
+						<DataGridTextColumn Width="40"  Header="Pivot y" Binding="{Binding yPivot}"/>
+						<DataGridTextColumn Width="40" Header="Frames" Binding="{Binding Frames}"/>
 					</DataGrid.Columns>
 				</DataGrid>
 			</Border>

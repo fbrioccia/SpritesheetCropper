@@ -2,18 +2,12 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 
@@ -24,55 +18,57 @@ namespace SpritesheetCropper
 	/// </summary>
 	public partial class MainWindow : Window
 	{
-		public BitmapImage CurrentSpritesheet { get; set; }
-		private Line[] MainGridLines { get; set; }
-		public const double ScaleRate = 1.1;
+		private BitmapImage CurrentSpritesheet { get; set; }
+		private Rectangle RedPointPosition { get; set; }
+		private List<Sprite> Sprites { get; set; }
+		
 		private Point startPoint;
 		private Rectangle rect;
-		private List<Sprite> Sprites { get; set; }
-		private Sprite CurrentSprite;
-		private bool IsInPivotSelection = false;
-		private bool IsSpriteDrawnable { get; set; }
-		private Rectangle RedPointPosition { get; set; }
-		private bool IsInFrameSelection;
+		
+		private Sprite CurrentSprite { get; set; }
+		private bool isInPivotSelection;
+		private bool isSpriteDrawnable;
+		private bool isPopupOpen;
+		private bool isInFrameSelection;
+
+		public const double ScaleRate = 1.1;
 
 		public MainWindow()
 		{
 			InitializeComponent();
-
 			this.PreviewKeyDown += new KeyEventHandler(HandleEsc);
 		}
 
 		private void HandleEsc(object sender, KeyEventArgs e)
 		{
-			if (IsInPivotSelection)
+			if (isInPivotSelection)
 			{
 				MainCanvas.Children.Remove(rect);
 				MainCanvas.Children.Remove(CurrentSprite.Pivot);
-				IsInPivotSelection = false;
+				isInPivotSelection = false;
 			}
-			if (IsInFrameSelection)
+
+			if (isInFrameSelection)
 			{
 				MainCanvas.Children.Remove(CurrentSprite.Pivot);
 
 				PopupFrameValue.Text = "20";
 				PopupFrame.IsOpen = false;
 				Mouse.OverrideCursor = Cursors.Cross;
-				IsInFrameSelection = false;
-				IsInPivotSelection = true;
+				isInFrameSelection = false;
+				isInPivotSelection = true;
 			}
 
 		}
 
 		private void InitalizeCanvas(BitmapImage image)
 		{
-			//MainCanvas.Children.Clear();
+			
 			Image img = new Image();
 			img.Source = image;
 
 			Sprites = new List<Sprite>();
 
-			//img.SnapsToDevicePixels = true;
 			MainCanvas.Background = Brushes.White;
 			MainCanvas.SnapsToDevicePixels = true;
 
@@ -85,8 +81,6 @@ namespace SpritesheetCropper
 
 			MainCanvas.Height = CurrentSpritesheet.Height;
 			MainCanvas.Width = CurrentSpritesheet.Width;
-
-			//MainGridLines.ToList().ForEach(x => x.Stroke = Brushes.Transparent);
 		}
 
 		private void PopupFrameMouseWheel(object sender, MouseWheelEventArgs e)
@@ -107,6 +101,8 @@ namespace SpritesheetCropper
 
 		private void MainCanvasMouseWheel(object sender, MouseWheelEventArgs e)
 		{
+			if (isPopupOpen) return;
+
 			if (!Keyboard.IsKeyDown(Key.LeftCtrl) && !Keyboard.IsKeyDown(Key.RightCtrl))
 				return;
 
@@ -128,6 +124,8 @@ namespace SpritesheetCropper
 
 		private void MenuItem_OnSave(object sender, RoutedEventArgs e)
 		{
+			if (isPopupOpen) return;
+
 			if (SpriteGridView.Items.Count == 0)
 				return;
 
@@ -143,11 +141,7 @@ namespace SpritesheetCropper
 					if (row != null || (row.DataContext as Sprite) != null)
 					{
 						var sprite = (row.DataContext as Sprite);
-						var line = string.Join(":",
-						new string[] {
-							sprite.X.ToString(), sprite.Y.ToString(), sprite.Width.ToString(), sprite.Height.ToString(), sprite.xPivot.ToString(),
-							sprite.yPivot.ToString(), sprite.Frames.ToString()
-						});
+						var line = string.Join(":", sprite.X.ToString(), sprite.Y.ToString(), sprite.Width.ToString(), sprite.Height.ToString(), sprite.xPivot.ToString(), sprite.yPivot.ToString(), sprite.Frames.ToString());
 						fileText += line + ";";
 					}
 
@@ -169,6 +163,8 @@ namespace SpritesheetCropper
 
 		private void MenuItem_OnOpen(object sender, RoutedEventArgs e)
 		{
+			if (isPopupOpen) return;
+
 			OpenFileDialog dialogResult = new OpenFileDialog();
 
 			// Set filter for file extension and default file extension 
@@ -177,10 +173,8 @@ namespace SpritesheetCropper
 
 
 			// Display OpenFileDialog by calling ShowDialog method 
-			Nullable<bool> result = dialogResult.ShowDialog();
+			bool? result = dialogResult.ShowDialog();
 
-
-			// Get the selected file name and display in a TextBox 
 			if (!result.HasValue || !result.Value)
 				return;
 			// Open document 
@@ -192,7 +186,9 @@ namespace SpritesheetCropper
 
 		private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
 		{
-			if (IsInPivotSelection || IsSpriteDrawnable || IsInFrameSelection)
+			if (isPopupOpen) return;
+
+			if (isInPivotSelection || isSpriteDrawnable || isInFrameSelection)
 				return;
 
 			startPoint = new Point(Math.Round(e.GetPosition(MainCanvas).X), Math.Round(e.GetPosition(MainCanvas).Y));
@@ -216,31 +212,42 @@ namespace SpritesheetCropper
 			Canvas.SetTop(rect, startPoint.Y);
 
 			MainCanvas.Children.Add(rect);
-			
-
 		}
+
 		private void PopupFrameMouseLeftButtonUp(object sender, MouseButtonEventArgs e)
 		{
 			CurrentSprite.Frames = int.Parse(PopupFrameValue.Text);
 			PopupFrameValue.Text = "20";
 			PopupFrame.IsOpen = false;
+			isPopupOpen = false;
+		}
+
+		private void Window_MouseUp(object sender, MouseButtonEventArgs e)
+		{
+			var isInsideCanvas = Mouse.GetPosition(MainCanvas).X >= 0 && Mouse.GetPosition(MainCanvas).Y >= 0;
+			if (isInsideCanvas) return;
+
+			Canvas_MouseUp(sender, e);
 		}
 
 		private void Canvas_MouseUp(object sender, MouseButtonEventArgs e)
 		{
+			if (isPopupOpen) return;
+
 			if (rect == null)
 				return;
 
 			if (double.IsNaN(rect.Width) || double.IsNaN(rect.Height) || rect.Width <= 1 || rect.Height <= 1)
 			{
 				MainCanvas.Children.Remove(rect);
-				IsInPivotSelection = false;
+				isInPivotSelection = false;
 				Mouse.OverrideCursor = Cursors.Arrow;
 				return;
 			}
-			else if (!IsInPivotSelection && !IsInFrameSelection && !IsSpriteDrawnable)
+			
+			if (!isInPivotSelection && !isInFrameSelection && !isSpriteDrawnable)
 			{
-				IsInPivotSelection = true;
+				isInPivotSelection = true;
 				Mouse.OverrideCursor = Cursors.Cross;
 				CurrentSprite.Height = Convert.ToInt32(rect.Height);
 				CurrentSprite.Width = Convert.ToInt32(rect.Width);
@@ -252,12 +259,12 @@ namespace SpritesheetCropper
 				return;
 			}
 
-			if (IsInPivotSelection)
+			if (isInPivotSelection)
 			{
-				IsInPivotSelection = false;
+				isInPivotSelection = false;
 
 				Mouse.OverrideCursor = Cursors.Arrow;
-				IsInFrameSelection = true;
+				isInFrameSelection = true;
 				CanvasHolderScrollBar.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
 
 				var pivot = DrawPoint((int)e.GetPosition(MainCanvas).X, (int)e.GetPosition(MainCanvas).Y);
@@ -267,30 +274,36 @@ namespace SpritesheetCropper
 				CurrentSprite.xPivot = (int)e.GetPosition(MainCanvas).X;
 				CurrentSprite.yPivot = (int)e.GetPosition(MainCanvas).Y;
 
-				PopupFrame.Height = CurrentSprite.Height;
-				PopupFrame.Width = CurrentSprite.Width;
-				PopupFrame.IsOpen = true;
-				PopupFrame.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+				ShowPopup(CurrentSprite.Width, CurrentSprite.Height, System.Windows.Controls.Primitives.PlacementMode.MousePoint);
 
-				IsSpriteDrawnable = true;
+				isSpriteDrawnable = true;
 				return;
 			}
 
-			if (IsSpriteDrawnable)
+			if (isSpriteDrawnable)
 			{
-				IsInFrameSelection = false;
+				isInFrameSelection = false;
 
 				Sprites.Add(CurrentSprite);
 				SpriteGridView.ItemsSource = null;
 
 				SpriteGridView.ItemsSource = Sprites;
 				SpriteGridView.UpdateLayout();
-				IsSpriteDrawnable = false;
+				isSpriteDrawnable = false;
 				RemoveAllTrasparentDots();
 				rect = new Rectangle();
 				return;
 			}
 
+		}
+
+		private void ShowPopup(int width, int height, System.Windows.Controls.Primitives.PlacementMode mousePoint)
+		{
+			PopupFrame.Height = CurrentSprite.Height;
+			PopupFrame.Width = CurrentSprite.Width;
+			PopupFrame.IsOpen = true;
+			PopupFrame.Placement = System.Windows.Controls.Primitives.PlacementMode.MousePoint;
+			isPopupOpen = true;
 		}
 
 		private void RemoveAllTrasparentDots()
@@ -308,16 +321,18 @@ namespace SpritesheetCropper
 
 		private void Canvas_MouseMove(object sender, MouseEventArgs e)
 		{
+			if (isPopupOpen) return;
+
 			var pos = new Point(Math.Round(e.GetPosition(MainCanvas).X), Math.Round(e.GetPosition(MainCanvas).Y));
 			bottomCoordinates.Text = "X: " + pos.X + "; Y: " + pos.Y;
 
 			if (e.LeftButton == MouseButtonState.Released || rect == null)
 				return;
 
-			if (IsInFrameSelection)
+			if (isInFrameSelection)
 				return;
 
-			if (IsInPivotSelection)
+			if (isInPivotSelection)
 			{
 				if (RedPointPosition != null)
 				{
@@ -339,18 +354,19 @@ namespace SpritesheetCropper
 			var w = Math.Max(pos.X, startPoint.X) - x;
 			var h = Math.Max(pos.Y, startPoint.Y) - y;
 
-
 			rect.Width = w;
 			rect.Height = h;
 
 			Canvas.SetLeft(rect, x);
 			Canvas.SetTop(rect, y);
-
 		}
 
 		private void DeleteSprite_MouseClick(object sender, RoutedEventArgs e)
 		{
+			if (isPopupOpen) return;
+
 			object id = ((Button)sender).CommandParameter;
+
 			if (id == null)
 				return;
 
@@ -361,11 +377,11 @@ namespace SpritesheetCropper
 			{
 				if (child as Rectangle != null)
 				{
-					if (child == Sprites.FirstOrDefault(x => x.Id == int.Parse(id.ToString())).Rectangle)
+					if (Equals(child, Sprites.FirstOrDefault(x => x.Id == int.Parse(id.ToString())).Rectangle))
 					{
 						rectangleToDelete = child;
 					}
-					else if (child == Sprites.FirstOrDefault(x => x.Id == int.Parse(id.ToString())).Pivot)
+					else if (Equals(child, Sprites.FirstOrDefault(x => x.Id == int.Parse(id.ToString())).Pivot))
 					{
 						pivotToDelete = child;
 					}
