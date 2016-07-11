@@ -21,10 +21,10 @@ namespace SpritesheetCropper
 		private BitmapImage CurrentSpritesheet { get; set; }
 		private Rectangle RedPointPosition { get; set; }
 		private List<Sprite> Sprites { get; set; }
-		
+
 		private Point startPoint;
 		private Rectangle rect;
-		
+
 		private Sprite CurrentSprite { get; set; }
 		private bool isInPivotSelection;
 		private bool isSpriteDrawnable;
@@ -61,9 +61,9 @@ namespace SpritesheetCropper
 
 		}
 
-		private void InitalizeCanvas(BitmapImage image)
+		private void InitializeCanvas(BitmapImage image)
 		{
-			
+
 			Image img = new Image();
 			img.Source = image;
 
@@ -97,6 +97,7 @@ namespace SpritesheetCropper
 
 			PopupFrameValue.Text = frame.ToString();
 		}
+
 
 
 		private void MainCanvasMouseWheel(object sender, MouseWheelEventArgs e)
@@ -181,7 +182,25 @@ namespace SpritesheetCropper
 
 			CurrentSpritesheet = new BitmapImage(new Uri(dialogResult.FileName));
 			DataGridHolder.Visibility = Visibility.Visible;
-			InitalizeCanvas(CurrentSpritesheet);
+			InitializeCanvas(CurrentSpritesheet);
+			InitializeScale();
+		}
+
+		private void InitializeScale()
+		{
+
+			ScaleTransform scale = new ScaleTransform(MainCanvas.ActualWidth, MainCanvas.ActualHeight); ;
+
+			do
+			{
+				scale = new ScaleTransform(MainCanvas.LayoutTransform.Value.M11 * ScaleRate,
+					MainCanvas.LayoutTransform.Value.M22 * ScaleRate);
+
+				PopupFrameValue.FontSize = 50 / scale.ScaleX;
+				MainCanvas.LayoutTransform = scale;
+				MainCanvas.UpdateLayout();
+			} while (CanvasHolderScrollBar.ComputedHorizontalScrollBarVisibility == Visibility.Collapsed
+			 && CanvasHolderScrollBar.ComputedVerticalScrollBarVisibility == Visibility.Collapsed);
 		}
 
 		private void Canvas_MouseDown(object sender, MouseButtonEventArgs e)
@@ -244,10 +263,19 @@ namespace SpritesheetCropper
 				Mouse.OverrideCursor = Cursors.Arrow;
 				return;
 			}
-			
+
 			if (!isInPivotSelection && !isInFrameSelection && !isSpriteDrawnable)
 			{
 				isInPivotSelection = true;
+
+				var mousePos = new Point(Math.Round(e.GetPosition(MainCanvas).X), Math.Round(e.GetPosition(MainCanvas).Y));
+				var pos = GetLeftCornerByDiagonalPoints(mousePos, new Point(CurrentSprite.X, CurrentSprite.Y));
+				if (pos.X < CurrentSprite.X || pos.Y < CurrentSprite.Y)
+				{
+					CurrentSprite.X = (int)pos.X;
+					CurrentSprite.Y = (int)pos.Y;
+				}
+
 				Mouse.OverrideCursor = Cursors.Cross;
 				CurrentSprite.Height = Convert.ToInt32(rect.Height);
 				CurrentSprite.Width = Convert.ToInt32(rect.Width);
@@ -326,7 +354,7 @@ namespace SpritesheetCropper
 			var pos = new Point(Math.Round(e.GetPosition(MainCanvas).X), Math.Round(e.GetPosition(MainCanvas).Y));
 			bottomCoordinates.Text = "X: " + pos.X + "; Y: " + pos.Y;
 
-			if (e.LeftButton == MouseButtonState.Released || rect == null)
+			if (!isInPivotSelection && e.LeftButton == MouseButtonState.Released || rect == null)
 				return;
 
 			if (isInFrameSelection)
@@ -406,6 +434,11 @@ namespace SpritesheetCropper
 			rec.Height = 1;
 			rec.Fill = isRed ? new SolidColorBrush(Colors.Red) : new SolidColorBrush(Colors.Green);
 			return rec;
+		}
+
+		public Point GetLeftCornerByDiagonalPoints(Point firstPoint, Point secondPoint)
+		{
+			return new Point(Math.Min(firstPoint.X, secondPoint.X), Math.Min(firstPoint.Y, secondPoint.Y));
 		}
 	}
 }
