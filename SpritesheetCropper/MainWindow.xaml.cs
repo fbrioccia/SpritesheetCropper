@@ -293,7 +293,6 @@ namespace SpritesheetCropper
 
 				Mouse.OverrideCursor = Cursors.Arrow;
 				isInFrameSelection = true;
-				CanvasHolderScrollBar.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
 
 				var pivot = DrawPoint((int)e.GetPosition(MainCanvas).X, (int)e.GetPosition(MainCanvas).Y);
 				CurrentSprite.Pivot = pivot;
